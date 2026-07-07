@@ -52,6 +52,11 @@ jobs:
           docker run -d \
              --name fastapi \
              -p 80:8000 \
+             -e DB_HOST="${{ secrets.DB_HOST }}" \
+             -e DB_USER="${{ secrets.DB_USER }}" \
+             -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+             -e DB_NAME="${{ secrets.DB_NAME }}" \
+             -e DB_PORT="${{ secrets.DB_PORT }}" \
              asia-south2-docker.pkg.dev/project-c2ff729b-747d-4105-b87/fastapi-images/fastapi-app:latest
       env:
         GCP_TOKEN: ${{ steps.gcp_token.outputs.token }}
