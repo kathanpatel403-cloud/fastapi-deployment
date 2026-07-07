@@ -30,23 +30,28 @@ jobs:
     - run: |
         docker push asia-south2-docker.pkg.dev/project-c2ff729b-747d-4105-b87/fastapi-images/fastapi-app:latest
 
+    - name: Get access token
+      id: gcp_token
+      run: echo "token=$(gcloud auth print-access-token)" >> "$GITHUB_OUTPUT"
+
     - name: SSH Deploy
       uses: appleboy/ssh-action@v1.2.0
-
       with:
         host: ${{ secrets.VM_HOST }}
         username: ${{ secrets.VM_USER }}
         key: ${{ secrets.VM_SSH_KEY }}
-
+        envs: GCP_TOKEN
         script: |
+          docker login -u oauth2accesstoken -p "$GCP_TOKEN" https://asia-south2-docker.pkg.dev
 
           docker pull asia-south2-docker.pkg.dev/project-c2ff729b-747d-4105-b87/fastapi-images/fastapi-app:latest
 
           docker stop fastapi || true
-
           docker rm fastapi || true
 
           docker run -d \
              --name fastapi \
              -p 80:8000 \
              asia-south2-docker.pkg.dev/project-c2ff729b-747d-4105-b87/fastapi-images/fastapi-app:latest
+      env:
+        GCP_TOKEN: ${{ steps.gcp_token.outputs.token }}
