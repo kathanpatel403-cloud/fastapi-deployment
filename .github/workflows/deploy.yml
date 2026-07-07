@@ -49,8 +49,12 @@ jobs:
           docker stop fastapi || true
           docker rm fastapi || true
 
+          # Create the shared network if it doesn't exist
+          docker network create app-network || true
+
           docker run -d \
              --name fastapi \
+             --network app-network \
              -p 80:8000 \
              -e DB_HOST="${{ secrets.DB_HOST }}" \
              -e DB_USER="${{ secrets.DB_USER }}" \
@@ -59,5 +63,28 @@ jobs:
              -e DB_PORT="${{ secrets.DB_PORT }}" \
              -e CELERY_BROKER_URL="${{ secrets.CELERY_BROKER_URL }}" \
              asia-south2-docker.pkg.dev/project-c2ff729b-747d-4105-b87/fastapi-images/fastapi-app:latest
+
+          # Celery Worker
+          docker stop celery-worker || true
+          docker rm celery-worker || true
+
+          docker run -d \
+              --name celery-worker \
+              --network app-network \
+              -e CELERY_BROKER_URL="${{ secrets.CELERY_BROKER_URL }}" \
+              asia-south2-docker.pkg.dev/project-c2ff729b-747d-4105-b87/fastapi-images/fastapi-app:latest \
+              celery -A celery_app.celery_app worker --loglevel=info
+
+          # Celery Beat
+          docker stop celery-beat || true
+          docker rm celery-beat || true
+
+          docker run -d \
+              --name celery-beat \
+              --network app-network \
+              -e CELERY_BROKER_URL="${{ secrets.CELERY_BROKER_URL }}" \
+              asia-south2-docker.pkg.dev/project-c2ff729b-747d-4105-b87/fastapi-images/fastapi-app:latest \
+              celery -A celery_app.celery_app beat --loglevel=info
+              
       env:
         GCP_TOKEN: ${{ steps.gcp_token.outputs.token }}
