@@ -25,10 +25,10 @@ jobs:
         gcloud auth configure-docker asia-south1-docker.pkg.dev
 
     - run: |
-        docker build -t asia-south1-docker.pkg.dev/PROJECT/fastapi-images/fastapi-app:latest .
+        docker build -t asia-south1-docker.pkg.dev/project-c2ff729b-747d-4105-b87/fastapi-images/fastapi-app:latest .
 
     - run: |
-        docker push asia-south1-docker.pkg.dev/PROJECT/fastapi-images/fastapi-app:latest
+        docker push asia-south1-docker.pkg.dev/project-c2ff729b-747d-4105-b87/fastapi-images/fastapi-app:latest
 
     - name: SSH Deploy
       uses: appleboy/ssh-action@v1.2.0
@@ -40,7 +40,7 @@ jobs:
 
         script: |
 
-          docker pull asia-south1-docker.pkg.dev/PROJECT/fastapi-images/fastapi-app:latest
+          docker pull asia-south1-docker.pkg.dev/project-c2ff729b-747d-4105-b87/fastapi-images/fastapi-app:latest
 
           docker stop fastapi || true
 
@@ -49,4 +49,4 @@ jobs:
           docker run -d \
              --name fastapi \
              -p 80:8000 \
-             asia-south1-docker.pkg.dev/PROJECT/fastapi-images/fastapi-app:latest
+             asia-south1-docker.pkg.dev/project-c2ff729b-747d-4105-b87/fastapi-images/fastapi-app:latest
