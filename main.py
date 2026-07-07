@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import Base, engine, get_db
 from models import User
 from schemas import UserCreate, UserOut
+from celery_app import send_email_task
 
 
 @asynccontextmanager
@@ -59,6 +60,13 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@app.post("/send-email", status_code=status.HTTP_202_ACCEPTED)
+def send_email(email: str, subject: str, message: str):
+    """Triggers an asynchronous background task via Celery worker."""
+    task = send_email_task.delay(email, subject, message)
+    return {"task_id": task.id, "status": "Task submitted to queue!"}
 
 
 if __name__ == "__main__":
