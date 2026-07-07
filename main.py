@@ -25,6 +25,7 @@ def health_check():
     return {"status": "Backend is healthy!"}
 
 
+
 @app.get("/")
 def root():
     return {"message": "Welcome to the FastAPI app"}
