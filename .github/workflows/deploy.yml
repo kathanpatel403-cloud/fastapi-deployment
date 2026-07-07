@@ -71,6 +71,11 @@ jobs:
           docker run -d \
               --name celery-worker \
               --network app-network \
+              -e DB_HOST="${{ secrets.DB_HOST }}" \
+              -e DB_USER="${{ secrets.DB_USER }}" \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e DB_NAME="${{ secrets.DB_NAME }}" \
+              -e DB_PORT="${{ secrets.DB_PORT }}" \
               -e CELERY_BROKER_URL="${{ secrets.CELERY_BROKER_URL }}" \
               asia-south2-docker.pkg.dev/project-c2ff729b-747d-4105-b87/fastapi-images/fastapi-app:latest \
               celery -A celery_app.celery_app worker --loglevel=info
@@ -82,6 +87,11 @@ jobs:
           docker run -d \
               --name celery-beat \
               --network app-network \
+              -e DB_HOST="${{ secrets.DB_HOST }}" \
+              -e DB_USER="${{ secrets.DB_USER }}" \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e DB_NAME="${{ secrets.DB_NAME }}" \
+              -e DB_PORT="${{ secrets.DB_PORT }}" \
               -e CELERY_BROKER_URL="${{ secrets.CELERY_BROKER_URL }}" \
               asia-south2-docker.pkg.dev/project-c2ff729b-747d-4105-b87/fastapi-images/fastapi-app:latest \
               celery -A celery_app.celery_app beat --loglevel=info
