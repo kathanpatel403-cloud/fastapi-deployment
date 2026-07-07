@@ -1,0 +1,52 @@
+name: Deploy FastAPI
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - uses: actions/checkout@v4
+
+    - uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - uses: google-github-actions/setup-gcloud@v2
+
+    - run: |
+        gcloud auth configure-docker asia-south1-docker.pkg.dev
+
+    - run: |
+        docker build -t asia-south1-docker.pkg.dev/PROJECT/fastapi-images/fastapi-app:latest .
+
+    - run: |
+        docker push asia-south1-docker.pkg.dev/PROJECT/fastapi-images/fastapi-app:latest
+
+    - name: SSH Deploy
+      uses: appleboy/ssh-action@v1.2.0
+
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USER }}
+        key: ${{ secrets.VM_SSH_KEY }}
+
+        script: |
+
+          docker pull asia-south1-docker.pkg.dev/PROJECT/fastapi-images/fastapi-app:latest
+
+          docker stop fastapi || true
+
+          docker rm fastapi || true
+
+          docker run -d \
+             --name fastapi \
+             -p 80:8000 \
+             asia-south1-docker.pkg.dev/PROJECT/fastapi-images/fastapi-app:latest
