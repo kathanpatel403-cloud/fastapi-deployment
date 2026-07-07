@@ -8,4 +8,8 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-CMD ["uvicorn","main:app","--host","0.0.0.0","--port","8000"]
+# Make the entrypoint script executable
+RUN chmod +x entrypoint.sh
+
+# Run the entrypoint script
+ENTRYPOINT ["./entrypoint.sh"]
