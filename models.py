@@ -11,6 +11,7 @@ class User(Base):
     name = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     is_deleted = Column(Boolean, default=False, nullable=False)
+    is_admin = Column(Boolean, default=False, nullable=False)
 
 class Post(Base):
     __tablename__ = "posts"
