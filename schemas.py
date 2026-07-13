@@ -1,4 +1,13 @@
+from typing import Any, Generic, TypeVar
 from pydantic import BaseModel, EmailStr
+
+T = TypeVar("T")
+
+
+class StandardResponse(BaseModel, Generic[T]):
+    data: T
+    status: int
+    message: str
 
 
 class UserCreate(BaseModel):
