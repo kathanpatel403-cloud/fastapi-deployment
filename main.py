@@ -1,19 +1,25 @@
+import logging
 from contextlib import asynccontextmanager
+
 from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from celery_app import send_email_task
 from database import Base, engine, get_db
 from models import User
 from schemas import UserCreate, UserOut, StandardResponse
-from celery_app import send_email_task
+from services.health import check_database_status, check_message_broker_status, render_health_dashboard
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Asynchronously create tables on startup
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as exc:
+        logging.warning("Database initialization skipped during startup: %s", exc)
     yield
 
 
@@ -26,10 +32,11 @@ def health_check():
     return StandardResponse(data={}, status=1, message="Backend is healthy!")
 
 
-
-@app.get("/", response_model=StandardResponse)
-def root():
-    return StandardResponse(data={}, status=1, message="Welcome to the FastAPI app")
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    db_ok, db_message = await check_database_status()
+    broker_ok, broker_message = check_message_broker_status()
+    return render_health_dashboard(db_ok, db_message, broker_ok, broker_message)
 
 
 @app.post("/users", response_model=StandardResponse[UserOut], status_code=status.HTTP_201_CREATED)
