@@ -48,211 +48,410 @@ def render_health_dashboard(db_ok: bool, db_message: str, broker_ok: bool, broke
 
     html = f"""
     <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>FastAPI Backend Status</title>
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500&display=swap');
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FastAPI · System Status</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+    <style>
+        :root {{
+            color-scheme: dark;
+            --bg: #0a0a0b;
+            --surface: #111114;
+            --surface-2: #16161a;
+            --surface-3: #1c1c22;
+            --text: #f4f4f5;
+            --text-2: #d4d4d8;
+            --muted: #8a8a94;
+            --subtle: #52525b;
+            --border: #23232a;
+            --border-strong: #2e2e37;
+            --accent: #a3e635;
+            --accent-soft: rgba(163, 230, 53, 0.12);
+            --ok: #86efac;
+            --ok-bg: rgba(134, 239, 172, 0.06);
+            --ok-border: rgba(134, 239, 172, 0.2);
+            --warn: #fcd34d;
+            --warn-bg: rgba(252, 211, 77, 0.06);
+            --warn-border: rgba(252, 211, 77, 0.2);
+        }}
 
-            :root {{
-                color-scheme: dark;
-                --bg: #090d14;
-                --panel: #0e1420;
-                --panel-2: #0b111c;
-                --text: #e7ebf2;
-                --muted: #6e7b90;
-                --border: #1c2635;
-                --accent: #5eead4;
-                --ok: #34d399;
-                --ok-bg: rgba(52, 211, 153, 0.1);
-                --warn: #f5b544;
-                --warn-bg: rgba(245, 181, 68, 0.1);
-            }}
+        * {{ box-sizing: border-box; }}
 
-            * {{ box-sizing: border-box; }}
+        @media (prefers-reduced-motion: reduce) {{
+            * {{ animation: none !important; transition: none !important; }}
+        }}
 
-            @media (prefers-reduced-motion: reduce) {{
-                * {{ animation: none !important; transition: none !important; }}
-            }}
+        html, body {{ height: 100%; }}
 
-            body {{
-                margin: 0;
-                font-family: 'Inter', Segoe UI, Roboto, sans-serif;
-                background:
-                    repeating-linear-gradient(180deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px),
-                    radial-gradient(circle at 15% 0%, #101a2c 0%, var(--bg) 55%);
-                color: var(--text);
-                min-height: 100vh;
-                display: grid;
-                place-items: center;
-                padding: 24px;
-            }}
+        body {{
+            margin: 0;
+            font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 15px;
+            line-height: 1.5;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 40px 24px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }}
 
-            .panel {{
-                position: relative;
-                width: min(880px, 100%);
-                background: linear-gradient(180deg, var(--panel), var(--panel-2));
-                border: 1px solid var(--border);
-                border-radius: 4px;
-                box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
-                overflow: hidden;
-            }}
+        /* Ambient background */
+        body::before {{
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 90% 60% at 50% -20%, rgba(163, 230, 53, 0.06), transparent 60%),
+                radial-gradient(ellipse 50% 40% at 100% 100%, rgba(163, 230, 53, 0.03), transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }}
 
-            .panel::before, .panel::after,
-            .hero .corner-l, .hero .corner-r {{
-                content: "";
-                position: absolute;
-                width: 14px;
-                height: 14px;
-                border: 1.5px solid var(--accent);
-                opacity: 0.55;
-            }}
-            .panel::before {{ top: -1px; left: -1px; border-right: none; border-bottom: none; }}
-            .panel::after {{ bottom: -1px; right: -1px; border-left: none; border-top: none; }}
+        body::after {{
+            content: "";
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+            background-size: 56px 56px;
+            pointer-events: none;
+            z-index: 0;
+            mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, black, transparent 85%);
+        }}
 
+        .shell {{
+            position: relative;
+            width: min(960px, 100%);
+            z-index: 1;
+        }}
+
+        /* Top brand row */
+        .brand {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            padding: 0 4px;
+        }}
+        .brand-mark {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Geist Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            color: var(--text-2);
+        }}
+        .brand-logo {{
+            width: 22px;
+            height: 22px;
+            border: 1px solid var(--border-strong);
+            border-radius: 6px;
+            display: grid;
+            place-items: center;
+            background: var(--surface-2);
+        }}
+        .brand-logo::before {{
+            content: "";
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 2px;
+            box-shadow: 0 0 12px var(--accent);
+        }}
+        .brand-meta {{
+            font-family: 'Geist Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 0.06em;
+        }}
+
+        /* Main card */
+        .panel {{
+            position: relative;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow:
+                0 50px 100px -30px rgba(0, 0, 0, 0.7),
+                0 1px 0 rgba(255, 255, 255, 0.03) inset;
+        }}
+
+        /* Hero */
+        .hero {{
+            padding: 48px 48px 40px;
+            border-bottom: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 32px;
+            align-items: end;
+        }}
+        .eyebrow {{
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Geist Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin: 0 0 20px;
+        }}
+        .eyebrow::before {{
+            content: "";
+            width: 16px;
+            height: 1px;
+            background: var(--border-strong);
+        }}
+        .hero h1 {{
+            margin: 0 0 14px;
+            font-family: 'Fraunces', 'Times New Roman', serif;
+            font-size: clamp(2.2rem, 4vw, 3rem);
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            line-height: 1.02;
+            color: var(--text);
+        }}
+        .hero h1 em {{
+            font-style: italic;
+            font-weight: 300;
+            color: var(--accent);
+        }}
+        .hero p {{
+            margin: 0;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.6;
+            max-width: 46ch;
+            font-weight: 400;
+        }}
+
+        .status {{
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px 10px 14px;
+            border-radius: 999px;
+            font-family: 'Geist Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            background: var(--ok-bg);
+            color: var(--ok);
+            border: 1px solid var(--ok-border);
+            white-space: nowrap;
+        }}
+        .status-dot {{
+            position: relative;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }}
+        .status-dot::after {{
+            content: "";
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: 0.3;
+            animation: pulse 2.4s ease-in-out infinite;
+        }}
+        @keyframes pulse {{
+            0%, 100% {{ transform: scale(0.8); opacity: 0.3; }}
+            50% {{ transform: scale(1.6); opacity: 0; }}
+        }}
+
+        /* Grid */
+        .grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1px;
+            background: var(--border);
+        }}
+        .card {{
+            position: relative;
+            background: var(--surface);
+            padding: 28px 28px 26px;
+            transition: background 0.25s ease;
+        }}
+        .card:hover {{ background: var(--surface-2); }}
+
+        .card-head {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }}
+        .card-label {{
+            margin: 0;
+            font-family: 'Geist Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }}
+        .card-pill {{
+            font-family: 'Geist Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--subtle);
+            padding: 3px 7px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }}
+
+        .value {{
+            font-family: 'Fraunces', serif;
+            font-size: 1.55rem;
+            font-weight: 300;
+            letter-spacing: -0.015em;
+            margin-bottom: 10px;
+            color: var(--text);
+            line-height: 1.1;
+        }}
+        .card.is-ok .value {{ color: var(--ok); }}
+        .card.is-warn .value {{ color: var(--warn); }}
+
+        .card-desc {{
+            color: var(--muted);
+            font-size: 13.5px;
+            line-height: 1.55;
+        }}
+
+        /* Footer */
+        .footer {{
+            border-top: 1px solid var(--border);
+            padding: 20px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            background: var(--surface-2);
+        }}
+        .footer-item {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Geist Mono', monospace;
+            font-size: 11.5px;
+            color: var(--muted);
+            letter-spacing: 0.02em;
+        }}
+        .footer-item strong {{
+            color: var(--text-2);
+            font-weight: 500;
+        }}
+        .footer-arrow {{
+            color: var(--subtle);
+        }}
+
+        @media (max-width: 720px) {{
+            body {{ padding: 24px 16px; }}
             .hero {{
-                padding: 30px 32px 22px;
-                border-bottom: 1px solid var(--border);
+                padding: 32px 28px 28px;
+                grid-template-columns: 1fr;
+                align-items: start;
             }}
-            .eyebrow {{
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 0.72rem;
-                letter-spacing: 0.18em;
-                text-transform: uppercase;
-                color: var(--accent);
-                margin: 0 0 10px;
-            }}
-            .hero h1 {{
-                margin: 0 0 6px;
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 1.6rem;
-                font-weight: 600;
-                letter-spacing: -0.01em;
-            }}
-            .hero p {{
-                margin: 0;
-                color: var(--muted);
-                font-size: 0.9rem;
-            }}
+            .hero h1 {{ font-size: 2rem; }}
+            .card {{ padding: 24px; }}
+            .footer {{ padding: 18px 28px; gap: 12px; }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <div class="brand">
+            <div class="brand-mark">
+                <div class="brand-logo"></div>
+                <span>fastapi · control</span>
+            </div>
+            <div class="brand-meta">v1.0 · runtime</div>
+        </div>
 
-            .status-row {{
-                margin: 22px 32px 6px;
-                display: flex;
-            }}
-            .status {{
-                padding: 9px 16px;
-                border-radius: 999px;
-                display: inline-flex;
-                align-items: center;
-                gap: 9px;
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 0.82rem;
-                font-weight: 600;
-                letter-spacing: 0.02em;
-                background: var(--ok-bg);
-                color: var(--ok);
-                border: 1px solid rgba(52, 211, 153, 0.3);
-            }}
-            .status::before {{
-                content: "";
-                width: 7px;
-                height: 7px;
-                border-radius: 50%;
-                background: currentColor;
-                box-shadow: 0 0 0 0 currentColor;
-                animation: pulse 2s infinite;
-            }}
-            @keyframes pulse {{
-                0% {{ box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45); }}
-                70% {{ box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }}
-                100% {{ box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }}
-            }}
-
-            .grid {{
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-                gap: 14px;
-                padding: 20px 32px 30px;
-            }}
-            .card {{
-                position: relative;
-                background: rgba(0, 0, 0, 0.18);
-                border: 1px solid var(--border);
-                border-left: 2px solid var(--border);
-                border-radius: 3px;
-                padding: 16px 18px;
-            }}
-            .card.is-ok {{ border-left-color: var(--ok); }}
-            .card.is-warn {{ border-left-color: var(--warn); }}
-
-            .card h2 {{
-                margin: 0 0 10px;
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 0.7rem;
-                font-weight: 500;
-                letter-spacing: 0.12em;
-                text-transform: uppercase;
-                color: var(--muted);
-            }}
-            .value {{
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 1.1rem;
-                font-weight: 600;
-                margin-bottom: 5px;
-            }}
-            .muted {{ color: var(--muted); font-size: 0.85rem; line-height: 1.5; }}
-            .ok {{ color: var(--ok); }}
-            .warn {{ color: var(--warn); }}
-
-            .footer {{
-                border-top: 1px solid var(--border);
-                color: var(--muted);
-                padding: 14px 32px;
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 0.74rem;
-                letter-spacing: 0.01em;
-            }}
-        </style>
-    </head>
-    <body>
         <div class="panel">
             <div class="hero">
-                <p class="eyebrow">System status</p>
-                <h1>FastAPI Backend</h1>
-                <p>Live health check for the API, database, and task queue.</p>
+                <div>
+                    <p class="eyebrow">System status</p>
+                    <h1>All systems <em>operational.</em></h1>
+                    <p>Real-time health telemetry for the API surface, primary datastore, and asynchronous task pipeline.</p>
+                </div>
+                <div class="status">
+                    <span class="status-dot"></span>
+                    {status_badge}
+                </div>
             </div>
-            <div class="status-row">
-                <div class="status">{status_badge}</div>
-            </div>
+
             <div class="grid">
                 <div class="card is-ok">
-                    <h2>Application</h2>
-                    <div class="value ok">Running</div>
-                    <div class="muted">Serving requests.</div>
+                    <div class="card-head">
+                        <p class="card-label">Application</p>
+                        <span class="card-pill">API</span>
+                    </div>
+                    <div class="value">Running</div>
+                    <div class="card-desc">Serving inbound requests.</div>
                 </div>
+
                 <div class="card {'is-ok' if db_ok else 'is-warn'}">
-                    <h2>Database</h2>
-                    <div class="value {'ok' if db_ok else 'warn'}">{'Configured' if db_ok else 'Attention required'}</div>
-                    <div class="muted">{escape(db_message)}</div>
+                    <div class="card-head">
+                        <p class="card-label">Database</p>
+                        <span class="card-pill">PG</span>
+                    </div>
+                    <div class="value">{'Configured' if db_ok else 'Attention'}</div>
+                    <div class="card-desc">{escape(db_message)}</div>
                 </div>
+
                 <div class="card {'is-ok' if broker_ok else 'is-warn'}">
-                    <h2>Message Broker</h2>
-                    <div class="value {'ok' if broker_ok else 'warn'}">{'Configured' if broker_ok else 'Attention required'}</div>
-                    <div class="muted">{escape(broker_message)}</div>
+                    <div class="card-head">
+                        <p class="card-label">Message Broker</p>
+                        <span class="card-pill">MQ</span>
+                    </div>
+                    <div class="value">{'Configured' if broker_ok else 'Attention'}</div>
+                    <div class="card-desc">{escape(broker_message)}</div>
                 </div>
+
                 <div class="card is-ok">
-                    <h2>Background Jobs</h2>
-                    <div class="value ok">Celery ready</div>
-                    <div class="muted">Async tasks via Celery.</div>
+                    <div class="card-head">
+                        <p class="card-label">Background Jobs</p>
+                        <span class="card-pill">CEL</span>
+                    </div>
+                    <div class="value">Celery ready</div>
+                    <div class="card-desc">Async tasks dispatched via Celery workers.</div>
                 </div>
             </div>
+
             <div class="footer">
-                DB → PostgreSQL env vars · Broker → CELERY_BROKER_URL
+                <div class="footer-item">
+                    <strong>DB</strong>
+                    <span class="footer-arrow">→</span>
+                    <span>PostgreSQL env vars</span>
+                </div>
+                <div class="footer-item">
+                    <strong>Broker</strong>
+                    <span class="footer-arrow">→</span>
+                    <span>CELERY_BROKER_URL</span>
+                </div>
             </div>
         </div>
-    </body>
-    </html>
+    </div>
+</body>
+</html>
+
     """
+    
     return HTMLResponse(content=html)
